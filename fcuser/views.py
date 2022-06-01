@@ -1,9 +1,44 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from .models import Fcuser
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password, check_password
 from django.http import HttpResponse
 
+
+
+
 # Create your views here.
+
+def home(request):
+    user_id = request.session.get('user')
+
+    if user_id:
+        fcuser = Fcuser.objects.get(pk=user_id)
+        return HttpResponse(fcuser.username)
+    return HttpResponse("Home!")
+
+def login(request):
+    if request.method == 'GET':
+        return render(request, 'login.html')
+    elif request.method == 'POST':
+        username = request.POST.get('username', None)
+        password = request.POST.get('password', None)
+
+        res_data = {}
+        if not (username and password):
+            res_data['error'] = '모든 값을 입력해야합니다.'
+        else:
+            fcuser = Fcuser.objects.get(username=username)
+            if check_password(password, fcuser.password):
+                request.session['user'] = fcuser.id
+                return redirect('/')
+                # 비밀번호 일치, 로그인 처리를!
+                # 세션!
+                #리다이렉트
+            else:
+                res_data['error'] = '비밀번호를 틀렸습니다'
+        
+        return render(request, 'login.html',res_data)
+
 def register(request):
     if request.method == "GET":
         return render(request, 'register.html')
